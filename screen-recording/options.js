@@ -35,6 +35,36 @@
             document.getElementById('bitsPerSecond').value = 'default';
         });
     }
+
+    if (items['youtube_privacy']) {
+        document.getElementById('youtube_privacy').value = items['youtube_privacy'];
+    } else {
+        chrome.storage.sync.set({
+            youtube_privacy: ''
+        }, function() {
+            document.getElementById('youtube_privacy').value = 'public';
+        });
+    }
+
+    if (items['videoResolutions']) {
+        document.getElementById('videoResolutions').value = items['videoResolutions'];
+    } else {
+        chrome.storage.sync.set({
+            videoResolutions: '1920x1080'
+        }, function() {
+            document.getElementById('videoResolutions').value = '1920x1080';
+        });
+    }
+
+    if (items['fixVideoSeekingIssues']) {
+        document.getElementById('fixVideoSeekingIssues').checked = items['fixVideoSeekingIssues'] == 'true';
+    } else {
+        chrome.storage.sync.set({
+            fixVideoSeekingIssues: 'false'
+        }, function() {
+            document.getElementById('fixVideoSeekingIssues').checked = false;
+        });
+    }
 });
 
 function querySelectorAll(selector) {
@@ -73,16 +103,34 @@ document.getElementById('videoMaxFrameRates').onchange = function() {
 };
 
 document.getElementById('bitsPerSecond').onchange = function() {
-    if (this.value === 'default') {
-        return;
-    }
-
     this.disabled = true;
     showSaving();
     chrome.storage.sync.set({
-        bitsPerSecond: this.value
+        bitsPerSecond: this.value === 'default' ? '' : this.value
     }, function() {
         document.getElementById('bitsPerSecond').disabled = false;
+        hideSaving();
+    });
+};
+
+document.getElementById('youtube_privacy').onchange = function() {
+    this.disabled = true;
+    showSaving();
+    chrome.storage.sync.set({
+        youtube_privacy: this.value === 'public' ? '' : this.value
+    }, function() {
+        document.getElementById('youtube_privacy').disabled = false;
+        hideSaving();
+    });
+};
+
+document.getElementById('videoResolutions').onchange = function() {
+    this.disabled = true;
+    showSaving();
+    chrome.storage.sync.set({
+        videoResolutions: this.value || '1920x1080'
+    }, function() {
+        document.getElementById('videoResolutions').disabled = false;
         hideSaving();
     });
 };
@@ -145,6 +193,15 @@ getAllAudioVideoDevices(function(result) {
     if (result.audioInputDevices.length && !result.audioInputDevices[0].label) {
         var constraints = { audio: true, video: true };
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+            var video = document.createElement('video');
+            video.muted = true;
+            if('srcObject' in video) {
+                video.srcObject = stream;
+            }
+            else {
+                video.src = URL.createObjectURL(stream);
+            }
+
             onGettingDevices(result, stream);
         }).catch(function() {
             onGettingDevices(result);
@@ -167,4 +224,16 @@ document.getElementById('camera-devices').onchange = function() {
     chrome.storage.sync.set({
         camera: this.value
     }, hideSaving);
+};
+
+document.getElementById('fixVideoSeekingIssues').onchange = function() {
+    this.disabled = true;
+
+    showSaving();
+    chrome.storage.sync.set({
+        fixVideoSeekingIssues: this.checked === true ? 'true' : 'false'
+    }, function() {
+        document.getElementById('fixVideoSeekingIssues').disabled = false;
+        hideSaving();
+    });
 };

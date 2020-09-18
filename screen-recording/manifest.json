@@ -1,63 +1,46 @@
-{  
-   "name":"RecordRTC",
-   "short_name":"RecordRTC",
-   "author":"Muaz Khan",
-   "version":"5.9",
-   "manifest_version":2,
-   "minimum_chrome_version":"49",
-   "description":"Record screen activity, camera, tab, speakers in 4K HD video format",
-   "homepage_url":"https://www.WebRTC-Experiment.com/RecordRTC/",
-   "background":{  
-      "scripts":[  
-         "background/background.common.js",
-         "background/background.js",
-         "background/background.desktopCapture.js",
-         "background/background.tabCapture.js",
-         "background/background.badgeText.js",
-         "background/background.getUserMedia.js",
-         "background/background.messaging.js",
-         "background/background.players.js",
-         "RecordRTC/MediaStreamRecorder.js",
-         "RecordRTC/MultiStreamRecorder.js",
-         "RecordRTC/DiskStorage.js"
-      ],
-      "persistent":false
+{
+   "author": "Muaz Khan",
+   "background": {
+      "persistent": false,
+      "scripts": [ "background/background.common.js", "background/background.js", "background/background.desktopCapture.js", "background/background.tabCapture.js", "background/background.badgeText.js", "background/background.getUserMedia.js", "background/background.messaging.js", "background/background.players.js", "RecordRTC/MediaStreamRecorder.js", "RecordRTC/MultiStreamRecorder.js", "RecordRTC/MultiStreamsMixer.js", "RecordRTC/StereoAudioRecorder.js", "RecordRTC/DiskStorage.js", "RecordRTC/EBML.js" ]
    },
-   "browser_action":{  
-      "default_icon":"images/main-icon.png",
-      "default_title":"Record Your Screen, Tab or Camera",
-      "default_popup": "dropdown.html"
+   "browser_action": {
+      "default_icon": "images/main-icon.png",
+      "default_popup": "dropdown.html",
+      "default_title": "Record Your Screen, Tab or Camera"
    },
-   "icons":{  
-      "16":"images/main-icon.png",
-      "22":"images/main-icon.png",
-      "32":"images/main-icon.png",
-      "48":"images/main-icon.png",
-      "128":"images/main-icon.png"
-   },
-   "permissions":[  
-      "desktopCapture",
-      "storage",
-      "tabs",
-      "tabCapture",
-      "activeTab",
-      "identity",
-      "https://www.googleapis.com/*"
-   ],
-   "oauth2": {
-       "client_id": "41556190767-44cbqasurg3dhfr9hmj1v90q5v8r9v46.apps.googleusercontent.com",
-       "scopes": [
-         "https://www.googleapis.com/auth/youtube.upload",
-         "https://www.googleapis.com/auth/youtube"
-       ]
-   },
+   "content_scripts": [ {
+      "all_frames": true,
+      "js": [ "background/background.contentScript.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_start"
+   } ],
    "content_security_policy": "script-src 'self' https://apis.google.com; object-src 'self'",
-   "web_accessible_resources":[  
-      "images/main-icon.png"
-   ],
-   "options_ui":{  
-      "page":"options.html",
-      "chrome_style":false,
-      "open_in_tab": true
-   }
+   "description": "Record screen activity, camera, mic, tab, speakers in 4K HD video format (using RecordRTC)",
+   "homepage_url": "https://github.com/muaz-khan/Chrome-Extensions/tree/master/screen-recording",
+   "icons": {
+      "128": "images/main-icon.png",
+      "16": "images/main-icon.png",
+      "22": "images/main-icon.png",
+      "32": "images/main-icon.png",
+      "48": "images/main-icon.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlMxDUHcsfk7f9qFcVIWnuTAlSMAmIpA+pF7uDfqNop9QUQ5bcYia7lXL2oIEQHTTIPfCmA9dzUSPBHZUYPc0umUKkWwHTjaU6lY8rF35aXXvgoxQVjojtqwC0cdLFe7Ghhn2PiiL67GZs5C4wLvgEKm9wRyLgvyJfjVmJfLZocjw/zD6CTkM0cMajN4N5foUb+gg0WzjYPMHmTglKlM5JgysMSGgHqasGZopMT75pSZHperwYtbk5oIhbFb9kTszdeSCBW+MMTb/FzjA0jggQMe/i4SlCZRjGHBcrw8auW9ubHlqAPNAm/P0WMOyghB/fFEH4qcbRDne1GcL4S98xwIDAQAB",
+   "manifest_version": 2,
+   "minimum_chrome_version": "49",
+   "name": "RecordRTC",
+   "oauth2": {
+      "client_id": "41556190767-99gorp1l5qij3hlsos4jms4vosbilrsa.apps.googleusercontent.com",
+      "scopes": [ "https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube" ]
+   },
+   "options_ui": {
+      "chrome_style": false,
+      "open_in_tab": true,
+      "page": "options.html"
+   },
+   "permissions": [ "desktopCapture", "storage", "tabs", "tabCapture", "activeTab", "\u003Call_urls>", "identity", "https://www.googleapis.com/*" ],
+   "short_name": "RecordRTC",
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "9.0",
+   "web_accessible_resources": [ "images/main-icon.png" ]
 }

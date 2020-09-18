@@ -4,6 +4,7 @@ var bitsPerSecond = 0;
 var isChrome = true; // used by RecordRTC
 
 var enableTabCaptureAPI = false;
+var enableTabCaptureAPIAudioOnly = false;
 
 var enableScreen = true;
 var enableMicrophone = false;
@@ -14,9 +15,16 @@ var enableSpeakers = true;
 
 var videoCodec = 'Default';
 var videoMaxFrameRates = '';
+var videoResolutions = '1920x1080';
 
-var isRecordingVOD = false;
 var startedVODRecordedAt = (new Date).getTime();
+
+var startRecordingCallback = function() {};
+var stopRecordingCallback = function(file) {};
+var openPreviewOnStopRecording = true;
+var openCameraPreviewDuringRecording = true;
+
+var fixVideoSeekingIssues = false;
 
 function isMediaRecorderCompatible() {
     return true;
@@ -68,9 +76,114 @@ function getRandomString() {
 }
 
 function getFileName(fileExtension) {
-    var d = new Date();
-    var year = d.getUTCFullYear();
-    var month = d.getUTCMonth();
-    var date = d.getUTCDate();
-    return 'RecordRTC-' + year + month + date + '-' + getRandomString() + '.' + fileExtension;
+    var str = getRandomString();
+    str = str.substr(0, 5);
+    return (new Date).toLocaleDateString().replace(/\//g,'-') + '-' + str + '.' + fileExtension;
+}
+
+function addStreamStopListener(stream, callback) {
+    var streamEndedEvent = 'ended';
+    if ('oninactive' in stream && !('onended' in stream)) {
+        streamEndedEvent = 'inactive';
+    }
+    stream.addEventListener(streamEndedEvent, function() {
+        callback();
+        callback = function() {};
+    });
+    getTracks(stream, 'audio').forEach(function(track) {
+        track.addEventListener(streamEndedEvent, function() {
+            callback();
+            callback = function() {};
+        });
+    });
+    getTracks(stream, 'video').forEach(function(track) {
+        track.addEventListener(streamEndedEvent, function() {
+            callback();
+            callback = function() {};
+        });
+    });
+}
+
+function getMixedAudioStream(arrayOfMediaStreams) {
+    // via: @pehrsons
+    if(typeof Storage === 'undefined') {
+        window.Storage = {
+            AudioContextConstructor: null,
+            AudioContext: window.AudioContext || window.webkitAudioContext
+        };
+    }
+
+    if (!Storage.AudioContextConstructor) {
+        Storage.AudioContextConstructor = new Storage.AudioContext();
+    }
+
+    var context = Storage.AudioContextConstructor;
+
+    var audioSources = [];
+
+    var gainNode = context.createGain();
+    gainNode.connect(context.destination);
+    gainNode.gain.value = 0; // don't hear self
+
+    var audioTracksLength = 0;
+    arrayOfMediaStreams.forEach(function(stream) {
+        if (!getTracks(stream, 'audio').length) {
+            return;
+        }
+
+        audioTracksLength++;
+
+        var audioSource = context.createMediaStreamSource(stream);
+        audioSource.connect(gainNode);
+        audioSources.push(audioSource);
+    });
+
+    if (!audioTracksLength) {
+        return;
+    }
+
+    mediaStremDestination = context.createMediaStreamDestination();
+    audioSources.forEach(function(audioSource) {
+        audioSource.connect(mediaStremDestination);
+    });
+
+    return mediaStremDestination.stream;
+}
+
+function getTracks(stream, kind) {
+    if (!stream || !stream.getTracks) {
+        return [];
+    }
+
+    return stream.getTracks().filter(function(t) {
+        return t.kind === (kind || 'audio');
+    });
+}
+
+function getSeekableBlob(inputBlob, callback) {
+    // EBML.js copyrights goes to: https://github.com/legokichi/ts-ebml
+    if (typeof EBML === 'undefined') {
+        throw new Error('Please link: https://cdn.webrtc-experiment.com/EBML.js');
+    }
+
+    var reader = new EBML.Reader();
+    var decoder = new EBML.Decoder();
+    var tools = EBML.tools;
+
+    var fileReader = new FileReader();
+    fileReader.onload = function(e) {
+        var ebmlElms = decoder.decode(this.result);
+        ebmlElms.forEach(function(element) {
+            reader.read(element);
+        });
+        reader.stop();
+        var refinedMetadataBuf = tools.makeMetadataSeekable(reader.metadatas, reader.duration, reader.cues);
+        var body = this.result.slice(reader.metadataSize);
+        var newBlob = new Blob([refinedMetadataBuf, body], {
+            type: 'video/webm'
+        });
+
+        callback(newBlob);
+    };
+    fileReader.readAsArrayBuffer(inputBlob);
 }
